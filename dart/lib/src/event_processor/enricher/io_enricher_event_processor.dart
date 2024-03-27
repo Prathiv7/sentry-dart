@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutnathel/flutnathel.dart';
+
 import '../../../sentry.dart';
 import 'enricher_event_processor.dart';
 
@@ -16,17 +18,17 @@ class IoEnricherEventProcessor implements EnricherEventProcessor {
   final SentryOptions _options;
 
   @override
-  SentryEvent? apply(SentryEvent event, {Hint? hint}) {
+  Future<SentryEvent?> apply(SentryEvent event, {Hint? hint}) async {
     // If there's a native integration available, it probably has better
     // information available than Flutter.
-
+   
     final os = _options.platformChecker.hasNativeIntegration
         ? null
         : _getOperatingSystem(event.contexts.operatingSystem);
 
     final device = _options.platformChecker.hasNativeIntegration
         ? null
-        : _getDevice(event.contexts.device);
+        : await _getDevice(event.contexts.device);
 
     final culture = _options.platformChecker.hasNativeIntegration
         ? null
@@ -96,9 +98,10 @@ class IoEnricherEventProcessor implements EnricherEventProcessor {
     };
   }
 
-  SentryDevice _getDevice(SentryDevice? device) {
+  Future<SentryDevice> _getDevice(SentryDevice? device) async {
+    
     return (device ?? SentryDevice()).copyWith(
-      name: device?.name ?? Platform.localHostname,
+      name: device?.name ?? await Flutnathel().getDeviceName() ,
       processorCount: device?.processorCount ?? Platform.numberOfProcessors,
     );
   }
